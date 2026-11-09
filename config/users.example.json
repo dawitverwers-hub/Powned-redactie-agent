@@ -1,0 +1,13 @@
+{
+  "allowed_domains": [
+    "example.com"
+  ],
+  "users": [
+    {
+      "name": "Example User",
+      "email": "user@example.com",
+      "password_hash": "<created by: python3 manage_users.py add \"Example User\" user@example.com>",
+      "role": "editor"
+    }
+  ]
+}

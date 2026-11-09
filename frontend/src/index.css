@@ -1,0 +1,61 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@theme {
+  --color-bg:        #000000;
+  --color-s1:        #0C0C0F;
+  --color-s2:        #141417;
+  --color-s3:        #1E1E22;
+  --color-border:    rgba(255,255,255,0.07);
+  --color-border-s:  rgba(255,255,255,0.13);
+  --color-text:      #F0F0F0;
+  --color-t2:        #A0A0A8;
+  --color-t3:        #606068;
+  --color-pink:      #E2148B;
+  --color-purple:    #9C2D8F;
+  --color-green:     #22C55E;
+  --color-amber:     #F59E0B;
+  --color-red:       #EF4444;
+  --font-sans:       'Inter', system-ui, sans-serif;
+  --font-mono:       'JetBrains Mono', 'SF Mono', monospace;
+}
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: #000; -webkit-font-smoothing: antialiased; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(226,20,139,0.3); color: #fff; }
+  ::-webkit-scrollbar { width: 3px; height: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-s3); border-radius: 2px; }
+  a { color: inherit; text-decoration: none; }
+  button { cursor: pointer; font-family: inherit; border: none; background: none; }
+  img { max-width: 100%; display: block; }
+}
+
+@layer utilities {
+  .gradient-text {
+    background: linear-gradient(135deg, #E2148B, #9C2D8F);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .gradient-bg { background: linear-gradient(135deg, #E2148B, #9C2D8F); }
+  .glass {
+    background: rgba(12,12,15,0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+  .must-have-card {
+    box-shadow: inset 3px 0 0 #E2148B;
+    background: linear-gradient(90deg, rgba(226,20,139,0.07) 0%, var(--color-s1) 55%);
+  }
+  .card-hover { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+  .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+}

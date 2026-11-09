@@ -1,0 +1,44 @@
+# Secrets & environment
+.env
+.env.local
+.env.production
+
+# Database & data
+data/
+*.db
+*.sqlite
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+powned_venv/
+
+# macOS
+.DS_Store
+.AppleDouble
+
+# Logs
+*.log
+logs/
+
+# n8n local data (users run their own instance)
+.n8n/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# n8n workflow bevat API keys — gebruik .example versie voor repo
+
+# Real users and recordings stay local
+config/users.json
+walkthrough_output/

@@ -1,0 +1,23 @@
+[Unit]
+Description=PowNed Redactie Platform
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=powned
+WorkingDirectory=/opt/powned
+Environment="PORT=5001"
+EnvironmentFile=/opt/powned/.env
+ExecStart=/opt/powned/powned_venv/bin/python3 /opt/powned/powned_server.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

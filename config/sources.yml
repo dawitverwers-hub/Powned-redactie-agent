@@ -1,0 +1,240 @@
+# Bronnenlijst PowNed Redactie Agent — officiële lijst van PowNed redactie.
+# Per bron: type (rss | scraper | social), naam, URL, regio en paywall-status.
+
+sources:
+  # ─── Nationale nieuwssites ─────────────────────────────────────
+  - name: NOS
+    type: rss
+    url: https://feeds.nos.nl/nosnieuwsalgemeen
+    region: NL
+    paywall: false
+
+  - name: De Telegraaf
+    type: rss
+    url: https://www.telegraaf.nl/rss/
+    region: NL
+    paywall: false
+
+  - name: AD
+    type: rss
+    url: https://www.ad.nl/rss.xml
+    region: NL
+    paywall: true
+
+  - name: RTL Nieuws
+    type: rss
+    url: https://www.rtlnieuws.nl/rss.xml
+    region: NL
+    paywall: false
+
+  - name: Volkskrant
+    type: rss
+    url: https://www.volkskrant.nl/rss.xml
+    region: NL
+    paywall: true
+
+  - name: Trouw
+    type: rss
+    url: https://www.trouw.nl/rss.xml
+    region: NL
+    paywall: true
+
+  - name: Hart van Nederland
+    type: sitemap
+    url: https://www.hartvannederland.nl/sitemap-news.xml
+    region: NL
+    paywall: false
+
+  - name: Politie
+    type: rss
+    url: https://news.google.com/rss/search?q=site:politie.nl+nieuws&hl=nl&gl=NL&ceid=NL:nl
+    region: NL
+    paywall: false
+
+  - name: Rechtspraak
+    type: rss
+    url: https://news.google.com/rss/search?q=site:rechtspraak.nl+uitspraak&hl=nl&gl=NL&ceid=NL:nl
+    region: NL
+    paywall: false
+
+  - name: Crimesite
+    type: rss
+    url: https://www.crimesite.nl/category/laatste-nieuws/feed/
+    region: NL
+    paywall: false
+
+  # ─── Regionale nieuwssites ─────────────────────────────────────
+  - name: NH Nieuws
+    type: sitemap
+    url: https://www.nhnieuws.nl/sitemap-news.xml
+    region: Noord-Holland
+    paywall: false
+
+  - name: AT5
+    type: sitemap
+    url: https://www.at5.nl/sitemap-news.xml
+    region: Amsterdam
+    paywall: false
+
+  - name: Gooi- en Eemlander
+    type: rss
+    url: https://www.gooieneemlander.nl/rss/
+    region: Noord-Holland
+    paywall: false
+    user_agent: feedfetcher
+
+  - name: Rijnmond
+    type: rss
+    url: https://www.rijnmond.nl/rss/nieuws/
+    region: Zuid-Holland
+    paywall: false
+
+  - name: Regio 15
+    type: rss
+    url: https://news.google.com/rss/search?q=site:regio15.nl&hl=nl&gl=NL&ceid=NL:nl
+    region: Zuid-Holland
+    paywall: false
+
+  - name: Omroep West
+    type: rss
+    url: https://www.omroepwest.nl/rss/all
+    region: Zuid-Holland
+    paywall: false
+    user_agent: feedfetcher
+
+  - name: RTV Utrecht
+    type: rss
+    url: https://www.rtvutrecht.nl/rss/nieuws.xml
+    region: Utrecht
+    paywall: false
+
+  - name: Omroep Brabant
+    type: rss
+    url: https://www.omroepbrabant.nl/rss
+    region: Noord-Brabant
+    paywall: false
+
+  - name: BN De Stem
+    type: rss
+    url: https://www.bndestem.nl/home/rss.xml
+    region: Noord-Brabant
+    paywall: false
+
+  - name: De Stentor
+    type: rss
+    url: https://www.destentor.nl/home/rss.xml
+    region: Overijssel
+    paywall: false
+
+  - name: PZC
+    type: rss
+    url: https://www.pzc.nl/home/rss.xml
+    region: Zeeland
+    paywall: false
+
+  - name: RTV Noord
+    type: rss
+    url: https://www.rtvnoord.nl/rss/nieuws.xml
+    region: Groningen
+    paywall: false
+
+  - name: L1 Limburg
+    type: rss
+    url: https://www.l1nieuws.nl/rss/nieuws.xml
+    region: Limburg
+    paywall: false
+
+  # ─── Politici & personen ──────────────────────────────────────
+  - name: MinPres Jetten
+    type: rss
+    url: https://news.google.com/rss/search?q=MinPres+Jetten&hl=nl&gl=NL&ceid=NL:nl
+    region: NL
+    paywall: false
+
+  - name: Geert Wilders
+    type: rss
+    url: https://news.google.com/rss/search?q=Geert+Wilders&hl=nl&gl=NL&ceid=NL:nl
+    region: NL
+    paywall: false
+
+  - name: Thierry Baudet
+    type: rss
+    url: https://news.google.com/rss/search?q=Thierry+Baudet&hl=nl&gl=NL&ceid=NL:nl
+    region: NL
+    paywall: false
+
+  - name: Pepijn van Houwelingen
+    type: rss
+    url: https://news.google.com/rss/search?q=Pepijn+van+Houwelingen&hl=nl&gl=NL&ceid=NL:nl
+    region: NL
+    paywall: false
+
+  - name: Extinction Rebellion
+    type: rss
+    url: https://news.google.com/rss/search?q=Extinction+Rebellion+Nederland&hl=nl&gl=NL&ceid=NL:nl
+    region: NL
+    paywall: false
+
+  # ─── Zoekwoorden ───────────────────────────────────────────────
+  - name: Zoekterm Zwarte Piet
+    type: rss
+    url: https://news.google.com/rss/search?q=Zwarte+Piet&hl=nl&gl=NL&ceid=NL:nl
+    region: NL
+    paywall: false
+
+  - name: Zoekterm Demonstratie
+    type: rss
+    url: https://news.google.com/rss/search?q=Demonstratie+Nederland&hl=nl&gl=NL&ceid=NL:nl
+    region: NL
+    paywall: false
+
+  - name: Zoekterm Inbraak
+    type: rss
+    url: https://news.google.com/rss/search?q=Inbraak+Nederland&hl=nl&gl=NL&ceid=NL:nl
+    region: NL
+    paywall: false
+
+  # ─── PowNed eigen publicaties ──────────────────────────────────
+  - name: PowNed
+    type: rss
+    url: https://news.google.com/rss/search?q=site:powned.tv&hl=nl&gl=NL&ceid=NL:nl
+    region: NL
+    paywall: false
+
+  # ─── Socials (nog te implementeren) ───────────────────────────
+  # - name: X Trending NL
+  #   type: social
+  #   platform: x
+  #   url: https://x.com/explore/tabs/trending
+
+  # - name: MinPres
+  #   type: social
+  #   platform: x
+  #   url: https://x.com/MinPres
+
+  # - name: Geert Wilders
+  #   type: social
+  #   platform: x
+  #   url: https://x.com/geertwilderspvv
+
+  # - name: Thierry Baudet
+  #   type: social
+  #   platform: x
+  #   url: https://x.com/thierrybaudet
+
+  # - name: Pepijn van Houwelingen
+  #   type: social
+  #   platform: x
+  #   url: https://x.com/PvanHouwelingen
+
+  # - name: Extinction Rebellion NL
+  #   type: social
+  #   platform: facebook
+  #   url: https://www.facebook.com/ExtinctionRebellionNL
+
+  # ─── ANP (vereist abonnement — handmatig activeren) ────────────
+  # - name: ANP
+  #   type: rss
+  #   url: https://app.anp.nl/app/nieuws/ed52e642-c9e6-4cba-894b-1b04fcada1aa0
+  #   region: NL
+  #   paywall: true

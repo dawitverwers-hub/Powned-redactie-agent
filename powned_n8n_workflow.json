@@ -1,0 +1,657 @@
+{
+  "id": "powned-pipeline-001",
+  "name": "PowNed Redactie Pipeline — Volledig",
+  "nodes": [
+    {
+      "id": "t-manual",
+      "name": "▶ Start handmatig",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        80,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "t-schedule",
+      "name": "⏰ Elk uur",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        160
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "get-sources",
+      "name": "📡 Bronnen ophalen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        230
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "http://127.0.0.1:5001/api/sources",
+        "options": {}
+      }
+    },
+    {
+      "id": "split-sources",
+      "name": "🔀 Elke bron apart",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        230
+      ],
+      "parameters": {
+        "jsCode": "const sources = $input.first().json.sources || [];\nreturn sources.map(s => ({ json: { url: s.url || s.feed_url, sourceName: s.name, region: s.region || 'NL', source: s } }));"
+      }
+    },
+    {
+      "id": "fetch-rss",
+      "name": "🌐 RSS ophalen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        230
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 15000
+        }
+      }
+    },
+    {
+      "id": "parse-rss",
+      "name": "📰 Artikelen parsen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        230
+      ],
+      "parameters": {
+        "jsCode": "const items = [];\nconst src = $input.first().json;\nconst xml = src.data || src.body || '';\nconst re = /<item[\\s\\S]*?<\\/item>|<entry[\\s\\S]*?<\\/entry>/gi;\nlet m;\nwhile ((m = re.exec(xml)) !== null) {\n  const b = m[0];\n  const tag = t => { const r = b.match(new RegExp('<'+t+'[^>]*>(?:<!\\\\[CDATA\\\\[([\\\\s\\\\S]*?)\\\\]\\\\]>|([^<]*))<\\/'+t+'>','i')); return r?(r[1]||r[2]||'').trim():''; };\n  const attr = (t,a) => { const r = b.match(new RegExp('<'+t+'[^>]*'+a+'=[\"\\']([^\"\\']*)','i')); return r?r[1]:''; };\n  const title = tag('title'), link = tag('link')||attr('link','href');\n  if (title && link) items.push({ json: {\n    title: title.replace(/<[^>]+>/g,'').trim(), url: link,\n    content: (tag('description')||tag('summary')||'').replace(/<[^>]+>/g,' ').trim().slice(0,500),\n    published_at: (() => { try { return new Date(tag('pubDate')||tag('published')||Date.now()).toISOString(); } catch(e){ return new Date().toISOString(); } })(),\n    image_url: attr('enclosure','url')||attr('media:content','url')||'',\n    source: src.sourceName||'', region: src.region||'NL'\n  }});\n}\nreturn items.length > 0 ? items : [{ json: { _skip: true } }];"
+      }
+    },
+    {
+      "id": "filter-skip",
+      "name": "🚦 Lege feeds skip",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        230
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json._skip }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "notExists"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "check-dup",
+      "name": "🔍 Duplicaat check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1300,
+        230
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/api/items/check",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ url: $json.url, title: $json.title, content: $json.content }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "if-new",
+      "name": "❓ Nieuw?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        230
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.exists }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "save-item",
+      "name": "💾 Artikel opslaan",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1700,
+        140
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/api/items/save",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($node[\"❓ Nieuw?\"].item.json) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "get-score",
+      "name": "📋 Artikelen voor scoring",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        440
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "http://127.0.0.1:5001/api/items/pending-score?limit=60",
+        "options": {}
+      }
+    },
+    {
+      "id": "batch-score",
+      "name": "📦 Batches van 10",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        440
+      ],
+      "parameters": {
+        "jsCode": "const items = $input.first().json.items || [];\nconst sz = 10;\nconst out = [];\nfor (let i = 0; i < items.length; i += sz) out.push({ json: { batch: items.slice(i,i+sz) } });\nreturn out.length ? out : [{ json: { batch: [] } }];"
+      }
+    },
+    {
+      "id": "ai-score",
+      "name": "🤖 Agent 02 — Scoren",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        440
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer JOUW_OPENAI_KEY_HIER"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({\"model\":\"gpt-4o-mini\",\"temperature\":0.2,\"max_tokens\":2000,\"messages\":[{\"role\":\"system\",\"content\":\"Je bent een PowNed-redacteur. Beoordeel nieuwsitems op PowNed-fit. PowNed = jonge doelgroep, viraal, confronterend, misdaad, politiek, opmerkelijk. Vijf criteria: viraal(0-25), visueel(0-20), nieuwswaarde(0-20), landelijkPotentieel(0-20), doelgroepfit(0-15). Prioriteit: must-have(80+), sterk(60-79), interessant(40-59), zwak(20-39), afwijzen(<20). Geef ALLEEN een JSON-array terug: [{\\\"url\\\":\\\"...\\\",\\\"relevance_score\\\":0,\\\"relevance_reason\\\":\\\"1 zin\\\",\\\"score_breakdown\\\":{\\\"viraal\\\":0,\\\"visueel\\\":0,\\\"nieuwswaarde\\\":0,\\\"landelijkPotentieel\\\":0,\\\"doelgroepfit\\\":0},\\\"prioriteit\\\":\\\"must-have|sterk|interessant|zwak|afwijzen\\\"}]\"},{\"role\":\"user\",\"content\":JSON.stringify($json.batch.map(i=>({url:i.url,title:i.title,content:(i.content||\"\").slice(0,400),source:i.source})))}]}) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "parse-score",
+      "name": "📊 Scores verwerken",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        440
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices?.[0]?.message?.content || '[]';\nlet res = [];\ntry {\n  const c = raw.replace(/^```json\\s*/,'').replace(/```\\s*$/,'').trim();\n  const p = JSON.parse(c);\n  res = Array.isArray(p) ? p : (Object.values(p).find(v => Array.isArray(v)) || []);\n} catch(e) {}\nreturn res.length ? res.map(r => ({ json: r })) : [{ json: { _empty: true } }];"
+      }
+    },
+    {
+      "id": "save-score",
+      "name": "💾 Scores opslaan",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        440
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/api/items/update-score",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($input.all().map(i=>i.json).filter(i=>!i._empty)) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "get-ethics",
+      "name": "📋 Artikelen voor ethiek",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        300,
+        640
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "http://127.0.0.1:5001/api/items/pending-ethics?limit=30",
+        "options": {}
+      }
+    },
+    {
+      "id": "batch-ethics",
+      "name": "📦 Batches van 3",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        640
+      ],
+      "parameters": {
+        "jsCode": "const items = $input.first().json.items || [];\nconst sz = 3;\nconst out = [];\nfor (let i = 0; i < items.length; i += sz) out.push({ json: { batch: items.slice(i,i+sz) } });\nreturn out.length ? out : [{ json: { batch: [] } }];"
+      }
+    },
+    {
+      "id": "ai-ethics",
+      "name": "🔍 Agent 04 — Ethiek",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        700,
+        640
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer JOUW_OPENAI_KEY_HIER"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({\"model\":\"gpt-4o-mini\",\"temperature\":0.1,\"max_tokens\":1800,\"messages\":[{\"role\":\"system\",\"content\":\"Je bent Agent 04 van PowNed. Beoordeel elk item op 7 indicatoren (0-100). Verdictregels: gemiddelde >=70=GROEN, 45-69=ORANJE, <45=ROOD. Zwakste <40 = max ORANJE. Geef ALLEEN een JSON-array terug: [{\\\"item_id\\\":\\\"url\\\",\\\"scores\\\":{\\\"bronherkomst_legitimiteit\\\":0,\\\"paywall_copyright\\\":0,\\\"privacy_persoonsgegevens\\\":0,\\\"verificatie_framing\\\":0,\\\"eenzijdigheid_hoor_wederhoor\\\":0,\\\"clickbait_sensatiezucht\\\":0,\\\"ethische_verkrijging\\\":0},\\\"overall_score\\\":0,\\\"verdict\\\":\\\"GROEN|ORANJE|ROOD\\\",\\\"zwakste_indicator\\\":\\\"naam\\\",\\\"zwakste_score\\\":0,\\\"paywall_alert\\\":false,\\\"gemarkeerde_passages\\\":[],\\\"aanbeveling\\\":\\\"max 2 zinnen\\\",\\\"mogelijke_pipeline_fout\\\":\\\"geen\\\"}]\"},{\"role\":\"user\",\"content\":JSON.stringify($json.batch.map(i=>({item_id:i.url,titel:i.title,tekst:(i.full_content||i.content||\"\").slice(0,800),originele_bron:i.source,ranking_score:i.relevance_score||0,paywall_omzeild:[\"AD\",\"Volkskrant\",\"Trouw\",\"De Telegraaf\",\"NRC\",\"FD\"].includes(i.source)})))}]}) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "parse-ethics",
+      "name": "📊 Ethiek verwerken",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        640
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.choices?.[0]?.message?.content || '[]';\nlet res = [];\ntry {\n  const c = raw.replace(/^```json\\s*/,'').replace(/```\\s*$/,'').trim();\n  const p = JSON.parse(c);\n  res = Array.isArray(p) ? p : (Object.values(p).find(v => Array.isArray(v)) || []);\n} catch(e) {}\nreturn res.length ? res.map(r => ({ json: { url: r.item_id, ethics_verdict: r.verdict, ethics_score: r.overall_score, ethics_report: r } })) : [{ json: { _empty: true } }];"
+      }
+    },
+    {
+      "id": "save-ethics",
+      "name": "💾 Ethiek opslaan",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        640
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/api/items/update-ethics",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify($input.all().map(i=>i.json).filter(i=>!i._empty)) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "rebuild",
+      "name": "🏗️ Feed bouwen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1300,
+        540
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/api/rebuild",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "{}",
+        "options": {}
+      }
+    },
+    {
+      "id": "done",
+      "name": "✅ Klaar",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1500,
+        540
+      ],
+      "parameters": {
+        "mode": "manual",
+        "fields": {
+          "values": [
+            {
+              "name": "status",
+              "stringValue": "Pipeline klaar"
+            },
+            {
+              "name": "tijdstip",
+              "stringValue": "={{ new Date().toLocaleString('nl-NL') }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "▶ Start handmatig": {
+      "main": [
+        [
+          {
+            "node": "📡 Bronnen ophalen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⏰ Elk uur": {
+      "main": [
+        [
+          {
+            "node": "📡 Bronnen ophalen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📡 Bronnen ophalen": {
+      "main": [
+        [
+          {
+            "node": "🔀 Elke bron apart",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔀 Elke bron apart": {
+      "main": [
+        [
+          {
+            "node": "🌐 RSS ophalen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🌐 RSS ophalen": {
+      "main": [
+        [
+          {
+            "node": "📰 Artikelen parsen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📰 Artikelen parsen": {
+      "main": [
+        [
+          {
+            "node": "🚦 Lege feeds skip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🚦 Lege feeds skip": {
+      "main": [
+        [
+          {
+            "node": "🔍 Duplicaat check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Duplicaat check": {
+      "main": [
+        [
+          {
+            "node": "❓ Nieuw?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "❓ Nieuw?": {
+      "main": [
+        [
+          {
+            "node": "💾 Artikel opslaan",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "💾 Artikel opslaan": {
+      "main": [
+        [
+          {
+            "node": "📋 Artikelen voor scoring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Artikelen voor scoring": {
+      "main": [
+        [
+          {
+            "node": "📦 Batches van 10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📦 Batches van 10": {
+      "main": [
+        [
+          {
+            "node": "🤖 Agent 02 — Scoren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 Agent 02 — Scoren": {
+      "main": [
+        [
+          {
+            "node": "📊 Scores verwerken",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Scores verwerken": {
+      "main": [
+        [
+          {
+            "node": "💾 Scores opslaan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💾 Scores opslaan": {
+      "main": [
+        [
+          {
+            "node": "📋 Artikelen voor ethiek",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Artikelen voor ethiek": {
+      "main": [
+        [
+          {
+            "node": "📦 Batches van 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📦 Batches van 3": {
+      "main": [
+        [
+          {
+            "node": "🔍 Agent 04 — Ethiek",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Agent 04 — Ethiek": {
+      "main": [
+        [
+          {
+            "node": "📊 Ethiek verwerken",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Ethiek verwerken": {
+      "main": [
+        [
+          {
+            "node": "💾 Ethiek opslaan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💾 Ethiek opslaan": {
+      "main": [
+        [
+          {
+            "node": "🏗️ Feed bouwen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🏗️ Feed bouwen": {
+      "main": [
+        [
+          {
+            "node": "✅ Klaar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "tags": [],
+  "pinData": {},
+  "versionId": "2"
+}
